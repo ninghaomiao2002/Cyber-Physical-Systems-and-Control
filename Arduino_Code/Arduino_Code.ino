@@ -39,9 +39,11 @@ void loop() {
 
   //Reading the X Axis analog pin to the xAxis_ variable for processing
   xAxis_ = analogRead(joyX);
+  // Serial.println(xAxis_);
+  // xAxis_ = map(xAxis_,264,758,0,1023);
   xAxis_ = map(xAxis_,264,758,0,1023);
   Joystick.setXAxis(xAxis_);
-  //Serial.println(xAxis_);
+  Serial.println(xAxis_);
 
 
   zAxis_ = analogRead(joyZ);
@@ -52,7 +54,7 @@ void loop() {
   
 
   throttle_ = analogRead(joyThrottle);
-  
+  // Serial.println(throttle_);
   throttle_ = map(throttle_,0,1023,0,511);
   Joystick.setThrottle(throttle_);
   //Serial.println(throttle_);
