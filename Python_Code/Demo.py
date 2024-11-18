@@ -8,13 +8,12 @@ import cv2
 import mediapipe as mp
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
-
-
 from cflib.crazyflie.log import LogConfig
-from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+from cflib.crazyflie.syncCrazyflie import SyncCrazyflie 
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.utils import uri_helper
 
+# set the uri for the drone
 URI = uri_helper.uri_from_env(default='radio://0/17/2M/EE5C21CF16')
 
 DEFAULT_HEIGHT = 0.6
@@ -24,15 +23,13 @@ logging.basicConfig(level=logging.ERROR)
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
-
 def detect_gesture(landmarks):
-    # Extract keypoint coordinates
+    # Extract keypoint coordinates too fingers
     thumb_tip = landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
     index_tip = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
     middle_tip = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
     ring_tip = landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
     pinky_tip = landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
-
     index_mcp = landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
     middle_mcp = landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
     ring_mcp = landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_MCP]
@@ -45,35 +42,41 @@ def detect_gesture(landmarks):
     def is_finger_bent(mcp, tip):
         return mcp.y < tip.y
 
+    # detection finger gesture 1
     if is_finger_straight(index_mcp, index_tip) and is_finger_bent(middle_mcp, middle_tip) \
             and is_finger_bent(ring_mcp, ring_tip) and is_finger_bent(pinky_mcp, pinky_tip):
         return "1"  # Move forward
 
+    # detection finger gesture 2
     if is_finger_straight(index_mcp, index_tip) and is_finger_straight(middle_mcp, middle_tip) \
             and is_finger_bent(ring_mcp, ring_tip) and is_finger_bent(pinky_mcp, pinky_tip):
         return "2"  # Move backward
 
+    # detection finger gesture 3
     if is_finger_straight(index_mcp, index_tip) and is_finger_straight(middle_mcp, middle_tip) \
             and is_finger_straight(ring_mcp, ring_tip) and is_finger_bent(pinky_mcp, pinky_tip):
         return "3"  # Move left
 
+    # detection finger gesture 4
     if is_finger_bent(index_mcp, thumb_tip) and is_finger_straight(index_mcp, index_tip) \
             and is_finger_straight(middle_mcp, middle_tip) and is_finger_straight(ring_mcp, ring_tip) \
             and is_finger_straight(pinky_mcp, pinky_tip):
         return "4"  # Move right
 
+    # detection finger gesture 5
     if is_finger_straight(index_mcp, thumb_tip) and is_finger_straight(middle_mcp, middle_tip) \
             and is_finger_straight(ring_mcp, ring_tip) and is_finger_straight(pinky_mcp, pinky_tip) \
             and is_finger_straight(thumb_mcp, thumb_tip):
         return "5"  # Move up
 
+    # detection finger gesture 0
     if is_finger_bent(index_mcp, index_tip) and is_finger_bent(middle_mcp, middle_tip) \
             and is_finger_bent(ring_mcp, ring_tip) and is_finger_bent(pinky_mcp, pinky_tip):
         return "0"  # Move down
 
     return None  # No gesture recognized
 
-
+# check if the deck is attached
 def param_deck_flow(_, value_str):
     value = int(value_str)
     if value:
@@ -82,36 +85,36 @@ def param_deck_flow(_, value_str):
     else:
         print('Deck is NOT attached!')
 
-
+# press function for different keys
 def on_press(key, mc):
     try:
-        if key.char == 'w':
+        if key.char == 'w': # move forward
             mc.forward(0.2, 1)
-        elif key.char == 's':
+        elif key.char == 's': # move back
             mc.back(0.2, 1)
-        elif key.char == 'a':
+        elif key.char == 'a': # move left
             mc.left(0.2, 1)
-        elif key.char == 'd':
+        elif key.char == 'd': # move right
             mc.right(0.2, 1)
-        elif key.char == 'q':
+        elif key.char == 'q': # turn left
             mc.turn_left(15)
-        elif key.char == 'e':
+        elif key.char == 'e': # turn right
             mc.turn_right(15)
-        elif key.char == 'r':  # go up
+        elif key.char == 'r': # go up
             mc.up(0.1)
-        elif key.char == 'f':  # do down
+        elif key.char == 'f': # go down
             mc.down(0.1)
-        elif key.char == '1':  # function NO.1 draw a circle
+        elif key.char == '1': # function NO.1 draw a circle
             mc.circle_left(0.3, 0.5, 360)
     except AttributeError:
         pass
 
-
-def on_release(key):  # press ESC to exit & land
+# press ESC to exit & land
+def on_release(key): 
     if key == keyboard.Key.esc:
         return False
 
-
+# selection for gesture, voice or keyboard control
 def control_method():
     while True:  # Keep asking until a valid input is provided
         method = input("Please choose control method of the drone: (voice or keyboard or gesture): ").lower()
@@ -123,42 +126,34 @@ def control_method():
         else:
             print("Invalid input. Please enter 'voice' or 'keyboard' or 'gesture'.")
 
-
 # Functions to control the drone based on voice commands
 def move_forward(mc):
     print("Moving forward")
     mc.forward(0.5, 1)
 
-
 def move_back(mc):
     print("Moving back")
     mc.back(0.5, 1)
-
 
 def move_left(mc):
     print("Moving left")
     mc.left(0.5, 1)
 
-
 def move_right(mc):
     print("Moving right")
     mc.right(0.5, 1)
-
 
 def move_up(mc):
     print("Moving up")
     mc.up(0.3, 0.6)
 
-
 def move_down(mc):
     print("Moving down")
     mc.down(0.3, 0.6)
 
-
 def circle_left(mc):
     print("Performing left circle")
     mc.circle_left(0.2, 0.2, 360)
-
 
 def take_off(mc):
     print("Taking off")
@@ -167,7 +162,6 @@ def take_off(mc):
 def land(mc):
     print("Landing...")
     mc.land()
-
 
 # Command mapping based on recognized voice commands
 COMMANDS = {
@@ -180,11 +174,9 @@ COMMANDS = {
     "circle": circle_left,
 }
 
-
 def listen_for_command():
     recognizer = sr.Recognizer()
-    # Tune the energy threshold for better speech detection
-    recognizer.energy_threshold = 1500  # You can adjust this value based on your environment
+    recognizer.energy_threshold = 1500
     recognizer.dynamic_energy_threshold = True
 
     with sr.Microphone() as source:
@@ -195,13 +187,14 @@ def listen_for_command():
         command = recognizer.recognize_google(audio).lower()
         print(f"You said: {command}")
         return command
+    
     except sr.UnknownValueError:
         print("Sorry, I did not understand the command.")
         return None
+    
     except sr.RequestError as e:
         print(f"Error with Google Web Speech API: {e}")
         return None
-
 
 # Main function for controlling the drone based on voice commands
 def drone_voice_control(scf):
@@ -209,13 +202,14 @@ def drone_voice_control(scf):
 
     while True:
         command = listen_for_command()  # Listen for a command
+        
         if command:
             command = command.strip().lower()  # Normalize the command
             first_letter = command[0]  # Get the first letter of the command
 
             print(f"Recognized command: '{command}'")  # Debugging output
 
-            # Process command based on the full command or the first letter
+            # Process command based on the full command or the first letter to improve accuracy
             if command in ["forward"] or first_letter == 'f':
                 move_forward(mc)
             elif command in ["backward", "back"] or first_letter == 'b':
@@ -241,15 +235,14 @@ def drone_voice_control(scf):
             failed_attempts = 0
 
         else:
-            print("No command recognized.")  # Debugging output
+            print("No command recognized.")
             failed_attempts += 1  # Increment if no command was understood
 
-        # Check if there have been 3 consecutive failed attempts
+        # Check if there have been 5 consecutive failed attempts
         if failed_attempts >= 5:
             print("No valid commands heard after 5 tries. Landing the drone.")
             land(mc)
             break
-
 
 def applying_gesture():
     last_gesture = None  # Initialize last gesture variable
@@ -295,7 +288,6 @@ def applying_gesture():
         if cv2.waitKey(10) & 0xFF == 27:
             break
 
-
 if __name__ == '__main__':
     cflib.crtp.init_drivers()
 
@@ -311,11 +303,17 @@ if __name__ == '__main__':
         with MotionCommander(scf, default_height=DEFAULT_HEIGHT) as mc:
             # Start listening for voice commands
             case = control_method()
+            
+            # implement voice function
             if case == "voice":
                 drone_voice_control(scf)
+
+            # implement keyboard function
             if case == "keyboard":
                 with keyboard.Listener(on_press=lambda key: on_press(key, mc), on_release=on_release) as listener:
                     listener.join()
+
+            # implement gesture function
             if case == "gesture":
                 cap = cv2.VideoCapture(0)
                 with mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.3) as hands:
